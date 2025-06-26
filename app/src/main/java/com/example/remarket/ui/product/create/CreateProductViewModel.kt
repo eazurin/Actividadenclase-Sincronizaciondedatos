@@ -1,4 +1,3 @@
-// File: app/src/main/java/com/example/remarket/ui/product/create/CreateProductViewModel.kt
 package com.example.remarket.ui.product.create
 
 import android.content.Context
@@ -19,7 +18,7 @@ import android.util.Log
 @HiltViewModel
 class CreateProductViewModel @Inject constructor(
     private val createProductUseCase: CreateProductUseCase,
-    private val cloudinaryService: CloudinaryService  // Inyectamos servicio de Cloudinary
+    private val cloudinaryService: CloudinaryService
 ) : ViewModel() {
 
     private val _brand = MutableStateFlow("")
@@ -34,7 +33,7 @@ class CreateProductViewModel @Inject constructor(
     private val _price = MutableStateFlow(0.0)
     val price: StateFlow<Double> = _price.asStateFlow()
 
-    private val _priceText = MutableStateFlow("")            // texto lineal
+    private val _priceText = MutableStateFlow("")
     val priceText: StateFlow<String> = _priceText.asStateFlow()
 
     private val _imei = MutableStateFlow("")
@@ -58,7 +57,6 @@ class CreateProductViewModel @Inject constructor(
     fun onBrandChanged(value: String) { _brand.value = value }
     fun onModelChanged(value: String) { _model.value = value }
     fun onStorageChanged(value: String) { _storage.value = value }
-    fun onPriceChanged(value: Double) { _price.value = value }
     fun onPriceTextChanged(text: String) {
         _priceText.value = text
         text.toDoubleOrNull()?.let { _price.value = it }
@@ -69,9 +67,6 @@ class CreateProductViewModel @Inject constructor(
     fun setBoxImage(uri: String) { _boxImageUrl.value = uri }
     fun setInvoiceImage(uri: String) { _invoiceUrl.value = uri }
 
-    /**
-     * Valida campos individualmente y devuelve mensaje específico.
-     */
     private fun validate(): String? {
         return when {
             brand.value.isBlank() -> "Por favor ingresa la marca."
@@ -82,42 +77,41 @@ class CreateProductViewModel @Inject constructor(
             else -> null
         }
     }
+
     fun submit(context: Context, onSuccess: () -> Unit) {
-        // Validación individual
         validate()?.let { msg ->
             _state.value = Resource.Error(msg)
             return
         }
 
-
         viewModelScope.launch {
             _state.value = Resource.Loading
-            Log.d("CreateProductVM", "Inicio de submit()")
             try {
-                Log.d("CreateProductVM", "Subiendo imágenes del producto")
-                // 1) Sube fotos del producto
-                val uploadedImages = _images.value.map { localUri ->
-                    Log.d("CreateProductVM", "Subiendo imagen: $localUri")
-                    cloudinaryService.uploadImage(context,localUri)
+                // 🟡 Intentar subir imágenes — si falla, continuar igual
+                val uploadedImages = try {
+                    _images.value.map { cloudinaryService.uploadImage(context, it) }
+                } catch (e: Exception) {
+                    Log.w("CreateProductVM", "Fallo al subir imágenes, usando URIs locales")
+                    _images.value
                 }
 
-                // 2) Sube foto de la caja (si existe)
-                val boxUrl = _boxImageUrl.value.takeIf { it.isNotBlank() }
-                    ?.let {
-                        Log.d("CreateProductVM", "Subiendo caja: $it")
-                        cloudinaryService.uploadImage(context,it)
+                val boxUrl = try {
+                    _boxImageUrl.value.takeIf { it.isNotBlank() }?.let {
+                        cloudinaryService.uploadImage(context, it)
                     }
+                } catch (e: Exception) {
+                    _boxImageUrl.value
+                }
 
-                Log.d("CreateProductVM", "Subiendo imagen de factura")
-                // 3) Sube foto de la factura (si existe)
-                val invoiceUrl = _invoiceUrl.value.takeIf { it.isNotBlank() }
-                    ?.let { Log.d("CreateProductVM", "Subiendo factura: $it")
-                        cloudinaryService.uploadImage(context,it)
+                val invoiceUrl = try {
+                    _invoiceUrl.value.takeIf { it.isNotBlank() }?.let {
+                        cloudinaryService.uploadImage(context, it)
                     }
+                } catch (e: Exception) {
+                    _invoiceUrl.value
+                }
 
-                Log.d("CreateProductVM", "Construyendo ProductRequest")
-
-                // 4) Reconstruye el request con las URLs en la nube
+                // 🟢 Preparar request con URLs remotas o locales
                 val req = ProductRequest(
                     brand = _brand.value,
                     model = _model.value,
@@ -129,19 +123,21 @@ class CreateProductViewModel @Inject constructor(
                     boxImageUrl = boxUrl,
                     invoiceUrl = invoiceUrl
                 )
-                Log.d("CreateProductVM", "Llamando a createProductUseCase")
-                // 5) Envía al backend
-                when (val result = createProductUseCase(req)) {
+
+                // 🟢 Guardar local y encolar sincronización
+                val result = createProductUseCase(req)
+
+                when (result) {
                     is Resource.Success -> {
                         _state.value = Resource.Success(Unit)
                         onSuccess()
                     }
                     is Resource.Error -> _state.value = Resource.Error(result.message)
-                    Resource.Idle -> TODO()
-                    Resource.Loading -> TODO()
+                    else -> {}
                 }
-            } catch(e: Exception) {
-                _state.value = Resource.Error("Error subiendo imágenes: ${e.message}")
+
+            } catch (e: Exception) {
+                _state.value = Resource.Error("Error inesperado: ${e.message}")
             }
         }
     }

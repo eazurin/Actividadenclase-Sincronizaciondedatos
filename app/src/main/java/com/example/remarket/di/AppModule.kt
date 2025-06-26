@@ -41,7 +41,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideTokenProvider(tokenManager: TokenManager): () -> String = {
-        tokenManager.getToken() ?: "" // [cite: 50]
+        tokenManager.getToken() ?: ""
     }
 
     @Provides
@@ -65,7 +65,7 @@ object AppModule {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
-            .build() // Aquí construimos el OkHttpClient correctamente
+            .build()
 
 
     @Provides @Singleton
@@ -74,7 +74,7 @@ object AppModule {
             .baseUrl("http://161.132.50.99:9364/")
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
-            .build() // Aquí construimos el Retrofit correctamente
+            .build()
 
     @Provides @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService {
@@ -99,8 +99,8 @@ object AppModule {
     @Provides @Singleton
     fun provideProductRepository(
         apiService: ApiService,
-        productDao: ProductDao, // [cite: 54]
-        @ApplicationContext context: Context
+        productDao: ProductDao,
+    @ApplicationContext context: Context
     ): IProductRepository = ProductRepository(apiService, productDao, context)
 
     @Provides

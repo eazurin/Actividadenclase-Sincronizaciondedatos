@@ -9,28 +9,25 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
 @HiltWorker
-class SyncWorker @AssistedInject constructor( // [cite: 48]
-    @Assisted appContext: Context, // [cite: 48]
-    @Assisted workerParams: WorkerParameters, // [cite: 48]
-    private val productRepository: IProductRepository // [cite: 48]
+class SyncWorker @AssistedInject constructor(
+    @Assisted appContext: Context,
+@Assisted workerParams: WorkerParameters,
+private val productRepository: IProductRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
     companion object {
-        const val WORK_NAME = "ProductSyncWorker" // [cite: 49]
+        const val WORK_NAME = "ProductSyncWorker"
     }
 
     override suspend fun doWork(): Result {
         return try {
-            // 1. Primero, empujar los cambios locales al servidor.
             productRepository.syncPendingChanges()
 
-            // 2. Después, traer los cambios del servidor.
             productRepository.refreshProducts()
 
             Result.success()
         } catch (e: Exception) {
-            // Si hay un error (ej. sin red), se reintentará según la política definida.
-            Result.retry() // [cite: 49]
+            Result.retry()
         }
     }
 }

@@ -62,6 +62,13 @@ dependencies {
     implementation(libs.moshi.kotlin)
     implementation(libs.moshi.converter)
     implementation(libs.retrofit)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+
     implementation(libs.converter.gson)
     implementation(libs.okhttp.logging)
     implementation(libs.hilt.android)

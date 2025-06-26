@@ -1,1 +1,2 @@
-# Actividadenclase-Sincronizaciondedatos
+# DANP_LAB7
+# Auxiliar

@@ -17,9 +17,20 @@ retrofit = "2.9.0"
 compose = "1.4.3"
 coreI18n = "1.0.0"
 googleServices = "4.4.2"
+room = "2.6.1"
+work = "2.9.0"
+hiltWork = "1.2.0"
 
 
 [libraries]
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+
+work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+
+hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
+
 cloudinary-android = { module = "com.cloudinary:cloudinary-android", version = "2.5.0" }
 
 moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
